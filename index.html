@@ -1,0 +1,41 @@
+<!doctype html><html lang="de"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b0b0f"><title>FilmBox – Serien</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#09090d;color:#fff;font-family:Arial,sans-serif}
+header{position:sticky;top:0;z-index:10;background:#15151ddd;padding:15px;display:flex;gap:12px;align-items:center}
+.logo{font-size:25px;font-weight:800;color:#e50914}.search{flex:1;max-width:650px;padding:13px;border-radius:11px;border:1px solid #444;background:#24242c;color:#fff;font-size:16px}
+main{max-width:1150px;margin:auto;padding:20px}.hero{padding:28px;border-radius:20px;background:linear-gradient(120deg,#2a101b,#17171f);margin-bottom:22px}.hero h1{font-size:38px;margin:0 0 8px}.hero p{color:#ccc}
+.tabs{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:22px}button{border:0;border-radius:10px;padding:10px 14px;background:#303039;color:#fff;cursor:pointer}button.active,button.primary{background:#e50914}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:17px}.card{background:#17171e;border:1px solid #2c2c35;border-radius:15px;overflow:hidden}.poster{height:270px;background:linear-gradient(145deg,#33131f,#252530);display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;font-weight:bold;font-size:23px}.info{padding:14px}.muted{color:#aaa;font-size:14px;line-height:1.4}.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.modal{display:none;position:fixed;inset:0;background:#000c;z-index:30;align-items:center;justify-content:center;padding:15px}.modal.show{display:flex}.box{background:#15151c;border:1px solid #383842;border-radius:17px;width:min(850px,100%);max-height:90vh;overflow:auto;padding:20px}.close{float:right}.provider{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#25252d;border-radius:10px;padding:12px;margin:8px 0}.note{color:#aaa;font-size:13px;margin-top:18px}
+@media(max-width:600px){header{flex-wrap:wrap}.search{order:3;flex-basis:100%;max-width:none}.hero h1{font-size:30px}.poster{height:230px}}
+</style></head><body>
+<header><div class="logo">FilmBox</div><input id="search" class="search" placeholder="z. B. Boruto, Naruto, One Piece …"></header>
+<main><section class="hero"><h1>Serien</h1><p>Ein echter Serienkatalog mit bekannten Titeln und offiziellen Anbietern.</p></section>
+<div class="tabs"><button class="active" data-mode="all">Alle</button><button data-mode="fav">Favoriten</button></div>
+<div id="grid" class="grid"></div></main>
+<div id="modal" class="modal"><div class="box"><button class="close" onclick="closeModal()">Schließen</button><div id="content"></div></div></div>
+<script>
+const catalog=[{"id": "boruto", "title": "Boruto: Naruto Next Generations", "year": 2017, "genre": "Anime · Action · Abenteuer", "desc": "Boruto Uzumaki beginnt seinen eigenen Weg als Ninja.", "seasons": 12, "providers": [["Crunchyroll", "https://www.crunchyroll.com/series/GR75Q020Y/boruto-naruto-next-generations"], ["Joyn", "https://www.joyn.de/serien/boruto-dp7adnkxkcfc"]]}, {"id": "naruto", "title": "Naruto", "year": 2002, "genre": "Anime · Action · Abenteuer", "desc": "Naruto Uzumaki träumt davon, Hokage zu werden.", "seasons": 5, "providers": [["Netflix", "https://www.netflix.com/de/"], ["Crunchyroll", "https://www.crunchyroll.com/de/"]]}, {"id": "shippuden", "title": "Naruto Shippuden", "year": 2007, "genre": "Anime · Action · Abenteuer", "desc": "Narutos Geschichte geht nach dem Training weiter.", "seasons": 21, "providers": [["Netflix", "https://www.netflix.com/de/"], ["Crunchyroll", "https://www.crunchyroll.com/de/"]]}, {"id": "onepiece", "title": "One Piece", "year": 1999, "genre": "Anime · Abenteuer · Action", "desc": "Ruffy und seine Crew suchen den legendären Schatz One Piece.", "seasons": 21, "providers": [["Netflix", "https://www.netflix.com/de/"], ["Crunchyroll", "https://www.crunchyroll.com/de/"]]}, {"id": "demon", "title": "Demon Slayer: Kimetsu no Yaiba", "year": 2019, "genre": "Anime · Action · Fantasy", "desc": "Tanjiro kämpft gegen Dämonen und sucht nach einem Heilmittel für seine Schwester.", "seasons": 4, "providers": [["Crunchyroll", "https://www.crunchyroll.com/de/"], ["Netflix", "https://www.netflix.com/de/"]]}, {"id": "jjk", "title": "Jujutsu Kaisen", "year": 2020, "genre": "Anime · Action · Fantasy", "desc": "Yuji Itadori gerät in die Welt der Flüche.", "seasons": 2, "providers": [["Crunchyroll", "https://www.crunchyroll.com/de/"], ["Netflix", "https://www.netflix.com/de/"]]}, {"id": "mha", "title": "My Hero Academia", "year": 2016, "genre": "Anime · Action · Superhelden", "desc": "Izuku Midoriya möchte trotz fehlender Superkraft ein Held werden.", "seasons": 8, "providers": [["Crunchyroll", "https://www.crunchyroll.com/de/"], ["Netflix", "https://www.netflix.com/de/"]]}, {"id": "blackclover", "title": "Black Clover", "year": 2017, "genre": "Anime · Action · Fantasy", "desc": "Asta und Yuno kämpfen um den Traum vom Zauberkönig.", "seasons": 4, "providers": [["Crunchyroll", "https://www.crunchyroll.com/de/"], ["Netflix", "https://www.netflix.com/de/"]]}];
+let mode="all",favs=JSON.parse(localStorage.getItem("filmbox-favs")||"[]");
+const grid=document.getElementById("grid"),modal=document.getElementById("modal"),content=document.getElementById("content");
+function isFav(id){return favs.includes(id)}
+function toggleFav(id){favs=isFav(id)?favs.filter(x=>x!==id):[...favs,id];localStorage.setItem("filmbox-favs",JSON.stringify(favs));render()}
+function render(){
+ const q=document.getElementById("search").value.toLowerCase();
+ const list=catalog.filter(x=>(mode==="all"||(mode==="fav"&&isFav(x.id)))&&(x.title.toLowerCase().includes(q)||x.genre.toLowerCase().includes(q)));
+ grid.innerHTML=list.map(x=>`<article class="card"><div class="poster">📺<br>${x.title}</div><div class="info"><h3>${x.title}</h3><div class="muted">${x.year} · ${x.genre}</div><p class="muted">${x.desc}</p><div class="actions"><button class="primary" onclick="openSeries('${x.id}')">Serie ansehen</button><button onclick="toggleFav('${x.id}')">${isFav(x.id)?"★ Favorit":"☆ Favorit"}</button></div></div></article>`).join("")||"<p>Keine Treffer.</p>";
+}
+function openSeries(id){
+ const x=catalog.find(a=>a.id===id);
+ let h=`<h2>${x.title}</h2><p class="muted">${x.desc}</p><p><b>${x.seasons} Staffeln</b></p><h3>Offizielle Anbieter</h3>`;
+ x.providers.forEach(p=>{h+=`<div class="provider"><span>${p[0]}</span><button class="primary" onclick="window.open('${p[1]}','_blank')">Öffnen</button></div>`});
+ h+=`<p class="note">FilmBox kopiert keine geschützten Streams. Die Wiedergabe erfolgt beim jeweiligen offiziellen Anbieter. Verfügbarkeit kann je nach Land und Zeitpunkt variieren.</p>`;
+ content.innerHTML=h;modal.classList.add("show");
+}
+function closeModal(){modal.classList.remove("show");content.innerHTML=""}
+document.getElementById("search").oninput=render;
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));b.classList.add("active");mode=b.dataset.mode;render()});
+render();
+</script></body></html>

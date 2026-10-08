@@ -1,0 +1,1 @@
+FilmBox mit echten Serientiteln und offiziellen Anbieter-Links. Enthalten: Boruto, Naruto, Naruto Shippuden, One Piece, Demon Slayer, Jujutsu Kaisen, My Hero Academia und Black Clover. Geschützte Streams werden nicht kopiert.
